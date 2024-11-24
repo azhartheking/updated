@@ -1,0 +1,5 @@
+customer_name,coffee_type,size,add_ons,price,order_time
+azhar,Americano,Large,['Milk'],5.0,2024-11-23 22:00:07.106123
+azhar,Americano,Large,['Milk'],5.0,2024-11-23 22:00:18.143510
+azhar,Americano,Large,['Milk'],5.0,2024-11-23 22:00:27.026431
+azhar,Caramel Macchiato,Medium,['Milk'],7.0,2024-11-23 22:02:55.138433
