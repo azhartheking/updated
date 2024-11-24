@@ -326,103 +326,103 @@ elif page == "Admin Panel" and st.session_state["logged_in"] and st.session_stat
     if st.button("Restock Inventory"):
         st.session_state["inventory"][item_to_restock] += restock_amount
         st.success(f"{item_to_restock.capitalize()} restocked successfully.")
-# Sales Reporting
-st.subheader("Sales Reporting")
-if st.session_state["order_history"]:
-    sales_df = pd.DataFrame(st.session_state["order_history"])
-    st.write("Total Sales Data")
-    st.dataframe(sales_df)
-
-    # Sales Breakdown by Coffee Type
-    sales_summary = sales_df["coffee_type"].value_counts().reset_index()
-    sales_summary.columns = ["coffee_type", "count"]
-
-    coffee_chart = (
-        alt.Chart(sales_summary)
-        .mark_bar()
-        .encode(
-            x=alt.X("coffee_type", sort="-y", title="Coffee Type"),
-            y=alt.Y("count", title="Sales Count"),
-            color=alt.Color("coffee_type", legend=None),  # Different color for each bar
-            tooltip=["coffee_type", "count"],
+    # Sales Reporting
+    st.subheader("Sales Reporting")
+    if st.session_state["order_history"]:
+        sales_df = pd.DataFrame(st.session_state["order_history"])
+        st.write("Total Sales Data")
+        st.dataframe(sales_df)
+    
+        # Sales Breakdown by Coffee Type
+        sales_summary = sales_df["coffee_type"].value_counts().reset_index()
+        sales_summary.columns = ["coffee_type", "count"]
+    
+        coffee_chart = (
+            alt.Chart(sales_summary)
+            .mark_bar()
+            .encode(
+                x=alt.X("coffee_type", sort="-y", title="Coffee Type"),
+                y=alt.Y("count", title="Sales Count"),
+                color=alt.Color("coffee_type", legend=None),  # Different color for each bar
+                tooltip=["coffee_type", "count"],
+            )
+            .properties(title="Sales Breakdown by Coffee Type", width="container", height=400)
         )
-        .properties(title="Sales Breakdown by Coffee Type", width="container", height=400)
-    )
-    st.altair_chart(coffee_chart, use_container_width=True)
-
-    # Total Profit Calculation
-    total_sales = sum(order["price"] for order in st.session_state["order_history"])
-    st.write(f"Total Revenue: ${total_sales}")
-
-    # Prepare Time Data
-    today = datetime.now()
-    sales_df["order_time"] = pd.to_datetime(sales_df["order_time"])
-
-    # Daily Profit (1–31 Days)
-    sales_df["day_of_month"] = sales_df["order_time"].dt.day  # Extract day of the month
-    daily_profit_data_full_month = (
-        sales_df.groupby("day_of_month")["price"]
-        .sum()
-        .reset_index()
-        .rename(columns={"day_of_month": "Day", "price": "Profit"})
-    )
-
-    st.subheader("Daily Profit (Full Month View)")
-    daily_full_month_chart = (
-        alt.Chart(daily_profit_data_full_month)
-        .mark_bar(color="skyblue")
-        .encode(
-            x=alt.X("Day:O", title="Day of the Month (1–31)"),
-            y=alt.Y("Profit:Q", title="Profit ($)"),
-            tooltip=["Day", "Profit"],
+        st.altair_chart(coffee_chart, use_container_width=True)
+    
+        # Total Profit Calculation
+        total_sales = sum(order["price"] for order in st.session_state["order_history"])
+        st.write(f"Total Revenue: ${total_sales}")
+    
+        # Prepare Time Data
+        today = datetime.now()
+        sales_df["order_time"] = pd.to_datetime(sales_df["order_time"])
+    
+        # Daily Profit (1–31 Days)
+        sales_df["day_of_month"] = sales_df["order_time"].dt.day  # Extract day of the month
+        daily_profit_data_full_month = (
+            sales_df.groupby("day_of_month")["price"]
+            .sum()
+            .reset_index()
+            .rename(columns={"day_of_month": "Day", "price": "Profit"})
         )
-        .properties(title="Daily Profit (Full Month)", width="container", height=300)
-    )
-    st.altair_chart(daily_full_month_chart, use_container_width=True)
-
-    # Weekly Profit
-    sales_df["week"] = sales_df["order_time"].dt.isocalendar().week  # Week number
-    weekly_profit_data = (
-        sales_df.groupby("week")["price"]
-        .sum()
-        .reset_index()
-        .rename(columns={"week": "Week", "price": "Profit"})
-    )
-
-    st.subheader("Weekly Profit")
-    weekly_chart = (
-        alt.Chart(weekly_profit_data)
-        .mark_line(point=True, color="green")
-        .encode(
-            x=alt.X("Week:O", title="Week Number"),
-            y=alt.Y("Profit:Q", title="Profit ($)"),
-            tooltip=["Week", "Profit"],
+    
+        st.subheader("Daily Profit (Full Month View)")
+        daily_full_month_chart = (
+            alt.Chart(daily_profit_data_full_month)
+            .mark_bar(color="skyblue")
+            .encode(
+                x=alt.X("Day:O", title="Day of the Month (1–31)"),
+                y=alt.Y("Profit:Q", title="Profit ($)"),
+                tooltip=["Day", "Profit"],
+            )
+            .properties(title="Daily Profit (Full Month)", width="container", height=300)
         )
-        .properties(title="Weekly Profit", width="container", height=300)
-    )
-    st.altair_chart(weekly_chart, use_container_width=True)
-
-    # Monthly Profit
-    sales_df["month"] = sales_df["order_time"].dt.month  # Month number
-    monthly_profit_data = (
-        sales_df.groupby("month")["price"]
-        .sum()
-        .reset_index()
-        .rename(columns={"month": "Month", "price": "Profit"})
-    )
-
-    st.subheader("Monthly Profit")
-    monthly_chart = (
-        alt.Chart(monthly_profit_data)
-        .mark_area(color="lightcoral", opacity=0.7)
-        .encode(
-            x=alt.X("Month:O", title="Month (1–12)"),
-            y=alt.Y("Profit:Q", title="Profit ($)"),
-            tooltip=["Month", "Profit"],
+        st.altair_chart(daily_full_month_chart, use_container_width=True)
+    
+        # Weekly Profit
+        sales_df["week"] = sales_df["order_time"].dt.isocalendar().week  # Week number
+        weekly_profit_data = (
+            sales_df.groupby("week")["price"]
+            .sum()
+            .reset_index()
+            .rename(columns={"week": "Week", "price": "Profit"})
         )
-        .properties(title="Monthly Profit", width="container", height=300)
-    )
-    st.altair_chart(monthly_chart, use_container_width=True)
+    
+        st.subheader("Weekly Profit")
+        weekly_chart = (
+            alt.Chart(weekly_profit_data)
+            .mark_line(point=True, color="green")
+            .encode(
+                x=alt.X("Week:O", title="Week Number"),
+                y=alt.Y("Profit:Q", title="Profit ($)"),
+                tooltip=["Week", "Profit"],
+            )
+            .properties(title="Weekly Profit", width="container", height=300)
+        )
+        st.altair_chart(weekly_chart, use_container_width=True)
+    
+        # Monthly Profit
+        sales_df["month"] = sales_df["order_time"].dt.month  # Month number
+        monthly_profit_data = (
+            sales_df.groupby("month")["price"]
+            .sum()
+            .reset_index()
+            .rename(columns={"month": "Month", "price": "Profit"})
+        )
+    
+        st.subheader("Monthly Profit")
+        monthly_chart = (
+            alt.Chart(monthly_profit_data)
+            .mark_area(color="lightcoral", opacity=0.7)
+            .encode(
+                x=alt.X("Month:O", title="Month (1–12)"),
+                y=alt.Y("Profit:Q", title="Profit ($)"),
+                tooltip=["Month", "Profit"],
+            )
+            .properties(title="Monthly Profit", width="container", height=300)
+        )
+        st.altair_chart(monthly_chart, use_container_width=True)
 
     # Least and Best Selling Product
     st.subheader("Product Performance")
