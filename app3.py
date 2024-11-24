@@ -327,23 +327,25 @@ elif page == "Admin Panel" and st.session_state["logged_in"] and st.session_stat
         st.session_state["inventory"][item_to_restock] += restock_amount
         st.success(f"{item_to_restock.capitalize()} restocked successfully.")
 
-   # Sales Reporting
+ # Sales Reporting
 st.subheader("Sales Reporting")
 if st.session_state["order_history"]:
     sales_df = pd.DataFrame(st.session_state["order_history"])
     st.write("Total Sales Data")
     st.dataframe(sales_df)
 
-    # Sales Breakdown by Coffee Type (Improved Visualization with Altair)
+    # Sales Breakdown by Coffee Type (Improved Bar Chart with Different Colors)
     sales_summary = sales_df["coffee_type"].value_counts().reset_index()
     sales_summary.columns = ["coffee_type", "count"]
 
     coffee_chart = (
         alt.Chart(sales_summary)
-        .mark_bar(color="orange")  # Vibrant bar color
+        .mark_bar()
         .encode(
             x=alt.X("coffee_type", sort="-y", title="Coffee Type"),
             y=alt.Y("count", title="Sales Count"),
+            color=alt.Color("coffee_type", legend=None),  # Different color for each bar
+            tooltip=["coffee_type", "count"],
         )
         .properties(title="Sales Breakdown by Coffee Type", width="container", height=400)
     )
@@ -353,7 +355,7 @@ if st.session_state["order_history"]:
     total_sales = sum(order["price"] for order in st.session_state["order_history"])
     st.write(f"Total Revenue: ${total_sales}")
 
-    # Daily, Weekly, and Monthly Profit Calculation with a Line Graph
+    # Daily, Weekly, and Monthly Profit Calculation
     today = datetime.now()
     sales_df["order_time"] = pd.to_datetime(sales_df["order_time"])
 
@@ -365,27 +367,47 @@ if st.session_state["order_history"]:
     weekly_profit = weekly_sales["price"].sum()
     monthly_profit = monthly_sales["price"].sum()
 
-    profit_data = pd.DataFrame({
-        "Period": ["Daily", "Weekly", "Monthly"],
-        "Profit": [daily_profit, weekly_profit, monthly_profit]
-    })
-
-    st.write(f"Daily Profit: ${daily_profit:.2f}")
-    st.write(f"Weekly Profit: ${weekly_profit:.2f}")
-    st.write(f"Monthly Profit: ${monthly_profit:.2f}")
-
-    # Line Graph for Profit
-    profit_chart = (
-        alt.Chart(profit_data)
-        .mark_line(point=True, strokeWidth=3, color="green")  # Green line with points
+    # Daily Profit Graph
+    st.subheader("Daily Profit")
+    daily_chart = (
+        alt.Chart(daily_sales)
+        .mark_bar(color="skyblue")
         .encode(
-            x=alt.X("Period", sort=["Daily", "Weekly", "Monthly"], title="Period"),
-            y=alt.Y("Profit", title="Profit ($)"),
-            tooltip=["Period", "Profit"],
+            x=alt.X("order_time:T", title="Order Time"),
+            y=alt.Y("price:Q", title="Profit ($)"),
+            tooltip=["order_time", "price"],
         )
-        .properties(title="Profit Over Time", width="container", height=400)
+        .properties(title="Daily Profit", width="container", height=300)
     )
-    st.altair_chart(profit_chart, use_container_width=True)
+    st.altair_chart(daily_chart, use_container_width=True)
+
+    # Weekly Profit Graph
+    st.subheader("Weekly Profit")
+    weekly_chart = (
+        alt.Chart(weekly_sales)
+        .mark_line(point=True, color="green")
+        .encode(
+            x=alt.X("order_time:T", title="Order Time"),
+            y=alt.Y("price:Q", title="Profit ($)"),
+            tooltip=["order_time", "price"],
+        )
+        .properties(title="Weekly Profit", width="container", height=300)
+    )
+    st.altair_chart(weekly_chart, use_container_width=True)
+
+    # Monthly Profit Graph
+    st.subheader("Monthly Profit")
+    monthly_chart = (
+        alt.Chart(monthly_sales)
+        .mark_area(color="lightcoral", opacity=0.7)
+        .encode(
+            x=alt.X("order_time:T", title="Order Time"),
+            y=alt.Y("price:Q", title="Profit ($)"),
+            tooltip=["order_time", "price"],
+        )
+        .properties(title="Monthly Profit", width="container", height=300)
+    )
+    st.altair_chart(monthly_chart, use_container_width=True)
 
     # Least and Best Selling Product
     st.subheader("Product Performance")
@@ -397,10 +419,12 @@ if st.session_state["order_history"]:
     # Improved Bar Chart for Product Performance
     performance_chart = (
         alt.Chart(sales_summary)
-        .mark_bar(color="blue")  # Blue for a different aesthetic
+        .mark_bar()
         .encode(
             x=alt.X("coffee_type", sort="-y", title="Coffee Type"),
             y=alt.Y("count", title="Sales Count"),
+            color=alt.Color("coffee_type", legend=None),  # Different color for each bar
+            tooltip=["coffee_type", "count"],
         )
         .properties(title="Product Performance", width="container", height=400)
     )
