@@ -326,7 +326,6 @@ elif page == "Admin Panel" and st.session_state["logged_in"] and st.session_stat
     if st.button("Restock Inventory"):
         st.session_state["inventory"][item_to_restock] += restock_amount
         st.success(f"{item_to_restock.capitalize()} restocked successfully.")
-
 # Sales Reporting
 st.subheader("Sales Reporting")
 if st.session_state["order_history"]:
@@ -334,7 +333,7 @@ if st.session_state["order_history"]:
     st.write("Total Sales Data")
     st.dataframe(sales_df)
 
-    # Sales Breakdown by Coffee Type (Improved Bar Chart with Different Colors)
+    # Sales Breakdown by Coffee Type
     sales_summary = sales_df["coffee_type"].value_counts().reset_index()
     sales_summary.columns = ["coffee_type", "count"]
 
@@ -359,39 +358,37 @@ if st.session_state["order_history"]:
     today = datetime.now()
     sales_df["order_time"] = pd.to_datetime(sales_df["order_time"])
 
-    # Create Aggregated Data for Daily, Weekly, and Monthly Profits
-    sales_df["day"] = (today - sales_df["order_time"]).dt.days  # Days from today
-    sales_df["week"] = sales_df["order_time"].dt.isocalendar().week  # Week number
-    sales_df["month"] = sales_df["order_time"].dt.month  # Month number
-
-    # Daily Profit
-    daily_profit_data = (
-        sales_df[sales_df["day"] < 7]
-        .groupby("day")["price"]
+    # Daily Profit (1–31 Days)
+    sales_df["day_of_month"] = sales_df["order_time"].dt.day  # Extract day of the month
+    daily_profit_data_full_month = (
+        sales_df.groupby("day_of_month")["price"]
         .sum()
         .reset_index()
-        .rename(columns={"day": "Day", "price": "Profit"})
+        .rename(columns={"day_of_month": "Day", "price": "Profit"})
     )
-    st.subheader("Daily Profit")
-    daily_chart = (
-        alt.Chart(daily_profit_data)
+
+    st.subheader("Daily Profit (Full Month View)")
+    daily_full_month_chart = (
+        alt.Chart(daily_profit_data_full_month)
         .mark_bar(color="skyblue")
         .encode(
-            x=alt.X("Day:O", title="Day (Last 7 Days)"),
+            x=alt.X("Day:O", title="Day of the Month (1–31)"),
             y=alt.Y("Profit:Q", title="Profit ($)"),
             tooltip=["Day", "Profit"],
         )
-        .properties(title="Daily Profit", width="container", height=300)
+        .properties(title="Daily Profit (Full Month)", width="container", height=300)
     )
-    st.altair_chart(daily_chart, use_container_width=True)
+    st.altair_chart(daily_full_month_chart, use_container_width=True)
 
     # Weekly Profit
+    sales_df["week"] = sales_df["order_time"].dt.isocalendar().week  # Week number
     weekly_profit_data = (
         sales_df.groupby("week")["price"]
         .sum()
         .reset_index()
         .rename(columns={"week": "Week", "price": "Profit"})
     )
+
     st.subheader("Weekly Profit")
     weekly_chart = (
         alt.Chart(weekly_profit_data)
@@ -406,12 +403,14 @@ if st.session_state["order_history"]:
     st.altair_chart(weekly_chart, use_container_width=True)
 
     # Monthly Profit
+    sales_df["month"] = sales_df["order_time"].dt.month  # Month number
     monthly_profit_data = (
         sales_df.groupby("month")["price"]
         .sum()
         .reset_index()
         .rename(columns={"month": "Month", "price": "Profit"})
     )
+
     st.subheader("Monthly Profit")
     monthly_chart = (
         alt.Chart(monthly_profit_data)
