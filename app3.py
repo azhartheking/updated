@@ -327,7 +327,7 @@ elif page == "Admin Panel" and st.session_state["logged_in"] and st.session_stat
         st.session_state["inventory"][item_to_restock] += restock_amount
         st.success(f"{item_to_restock.capitalize()} restocked successfully.")
 
- # Sales Reporting
+# Sales Reporting
 st.subheader("Sales Reporting")
 if st.session_state["order_history"]:
     sales_df = pd.DataFrame(st.session_state["order_history"])
@@ -355,55 +355,71 @@ if st.session_state["order_history"]:
     total_sales = sum(order["price"] for order in st.session_state["order_history"])
     st.write(f"Total Revenue: ${total_sales}")
 
-    # Daily, Weekly, and Monthly Profit Calculation
+    # Prepare Time Data
     today = datetime.now()
     sales_df["order_time"] = pd.to_datetime(sales_df["order_time"])
 
-    daily_sales = sales_df[sales_df["order_time"] >= (today - timedelta(days=1))]
-    weekly_sales = sales_df[sales_df["order_time"] >= (today - timedelta(weeks=1))]
-    monthly_sales = sales_df[sales_df["order_time"] >= (today - timedelta(days=30))]
+    # Create Aggregated Data for Daily, Weekly, and Monthly Profits
+    sales_df["day"] = (today - sales_df["order_time"]).dt.days  # Days from today
+    sales_df["week"] = sales_df["order_time"].dt.isocalendar().week  # Week number
+    sales_df["month"] = sales_df["order_time"].dt.month  # Month number
 
-    daily_profit = daily_sales["price"].sum()
-    weekly_profit = weekly_sales["price"].sum()
-    monthly_profit = monthly_sales["price"].sum()
-
-    # Daily Profit Graph
+    # Daily Profit
+    daily_profit_data = (
+        sales_df[sales_df["day"] < 7]
+        .groupby("day")["price"]
+        .sum()
+        .reset_index()
+        .rename(columns={"day": "Day", "price": "Profit"})
+    )
     st.subheader("Daily Profit")
     daily_chart = (
-        alt.Chart(daily_sales)
+        alt.Chart(daily_profit_data)
         .mark_bar(color="skyblue")
         .encode(
-            x=alt.X("order_time:T", title="Order Time"),
-            y=alt.Y("price:Q", title="Profit ($)"),
-            tooltip=["order_time", "price"],
+            x=alt.X("Day:O", title="Day (Last 7 Days)"),
+            y=alt.Y("Profit:Q", title="Profit ($)"),
+            tooltip=["Day", "Profit"],
         )
         .properties(title="Daily Profit", width="container", height=300)
     )
     st.altair_chart(daily_chart, use_container_width=True)
 
-    # Weekly Profit Graph
+    # Weekly Profit
+    weekly_profit_data = (
+        sales_df.groupby("week")["price"]
+        .sum()
+        .reset_index()
+        .rename(columns={"week": "Week", "price": "Profit"})
+    )
     st.subheader("Weekly Profit")
     weekly_chart = (
-        alt.Chart(weekly_sales)
+        alt.Chart(weekly_profit_data)
         .mark_line(point=True, color="green")
         .encode(
-            x=alt.X("order_time:T", title="Order Time"),
-            y=alt.Y("price:Q", title="Profit ($)"),
-            tooltip=["order_time", "price"],
+            x=alt.X("Week:O", title="Week Number"),
+            y=alt.Y("Profit:Q", title="Profit ($)"),
+            tooltip=["Week", "Profit"],
         )
         .properties(title="Weekly Profit", width="container", height=300)
     )
     st.altair_chart(weekly_chart, use_container_width=True)
 
-    # Monthly Profit Graph
+    # Monthly Profit
+    monthly_profit_data = (
+        sales_df.groupby("month")["price"]
+        .sum()
+        .reset_index()
+        .rename(columns={"month": "Month", "price": "Profit"})
+    )
     st.subheader("Monthly Profit")
     monthly_chart = (
-        alt.Chart(monthly_sales)
+        alt.Chart(monthly_profit_data)
         .mark_area(color="lightcoral", opacity=0.7)
         .encode(
-            x=alt.X("order_time:T", title="Order Time"),
-            y=alt.Y("price:Q", title="Profit ($)"),
-            tooltip=["order_time", "price"],
+            x=alt.X("Month:O", title="Month (1–12)"),
+            y=alt.Y("Profit:Q", title="Profit ($)"),
+            tooltip=["Month", "Profit"],
         )
         .properties(title="Monthly Profit", width="container", height=300)
     )
