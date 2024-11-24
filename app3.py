@@ -327,49 +327,84 @@ elif page == "Admin Panel" and st.session_state["logged_in"] and st.session_stat
         st.session_state["inventory"][item_to_restock] += restock_amount
         st.success(f"{item_to_restock.capitalize()} restocked successfully.")
 
-    # Sales Reporting
-    st.subheader("Sales Reporting")
-    if st.session_state["order_history"]:
-        sales_df = pd.DataFrame(st.session_state["order_history"])
-        st.write("Total Sales Data")
-        st.dataframe(sales_df)
+   # Sales Reporting
+st.subheader("Sales Reporting")
+if st.session_state["order_history"]:
+    sales_df = pd.DataFrame(st.session_state["order_history"])
+    st.write("Total Sales Data")
+    st.dataframe(sales_df)
 
-        # Sales Breakdown by Coffee Type
-        sales_summary = sales_df["coffee_type"].value_counts()
-        st.bar_chart(sales_summary, use_container_width=True)
+    # Sales Breakdown by Coffee Type (Improved Visualization with Altair)
+    sales_summary = sales_df["coffee_type"].value_counts().reset_index()
+    sales_summary.columns = ["coffee_type", "count"]
 
-        # Total Profit Calculation (mock example)
-        total_sales = sum(order["price"] for order in st.session_state["order_history"])
-        st.write(f"Total Revenue: ${total_sales}")
+    coffee_chart = (
+        alt.Chart(sales_summary)
+        .mark_bar(color="orange")  # Vibrant bar color
+        .encode(
+            x=alt.X("coffee_type", sort="-y", title="Coffee Type"),
+            y=alt.Y("count", title="Sales Count"),
+        )
+        .properties(title="Sales Breakdown by Coffee Type", width="container", height=400)
+    )
+    st.altair_chart(coffee_chart, use_container_width=True)
 
-        # Daily, Weekly, and Monthly Profit Calculation with Graphs
-        today = datetime.now()
-        sales_df['order_time'] = pd.to_datetime(sales_df['order_time'])
+    # Total Profit Calculation
+    total_sales = sum(order["price"] for order in st.session_state["order_history"])
+    st.write(f"Total Revenue: ${total_sales}")
 
-        daily_sales = sales_df[sales_df['order_time'] >= (today - timedelta(days=1))]
-        weekly_sales = sales_df[sales_df['order_time'] >= (today - timedelta(weeks=1))]
-        monthly_sales = sales_df[sales_df['order_time'] >= (today - timedelta(days=30))]
+    # Daily, Weekly, and Monthly Profit Calculation with a Line Graph
+    today = datetime.now()
+    sales_df["order_time"] = pd.to_datetime(sales_df["order_time"])
 
-        daily_profit = daily_sales['price'].sum()
-        weekly_profit = weekly_sales['price'].sum()
-        monthly_profit = monthly_sales['price'].sum()
+    daily_sales = sales_df[sales_df["order_time"] >= (today - timedelta(days=1))]
+    weekly_sales = sales_df[sales_df["order_time"] >= (today - timedelta(weeks=1))]
+    monthly_sales = sales_df[sales_df["order_time"] >= (today - timedelta(days=30))]
 
-        profit_data = pd.DataFrame({
-            'Period': ['Daily', 'Weekly', 'Monthly'],
-            'Profit': [daily_profit, weekly_profit, monthly_profit]
-        })
-        st.write(f"Daily Profit: ${daily_profit:.2f}")
-        st.write(f"Weekly Profit: ${weekly_profit:.2f}")
-        st.write(f"Monthly Profit: ${monthly_profit:.2f}")
-        st.bar_chart(profit_data.set_index('Period'), use_container_width=True)
+    daily_profit = daily_sales["price"].sum()
+    weekly_profit = weekly_sales["price"].sum()
+    monthly_profit = monthly_sales["price"].sum()
 
-        # Least and Best Selling Product
-        st.subheader("Product Performance")
-        best_selling = sales_summary.idxmax()
-        least_selling = sales_summary.idxmin()
-        st.write(f"Best Selling Product: {best_selling}")
-        st.write(f"Least Selling Product: {least_selling}")
-        st.bar_chart(sales_summary, use_container_width=True)
+    profit_data = pd.DataFrame({
+        "Period": ["Daily", "Weekly", "Monthly"],
+        "Profit": [daily_profit, weekly_profit, monthly_profit]
+    })
+
+    st.write(f"Daily Profit: ${daily_profit:.2f}")
+    st.write(f"Weekly Profit: ${weekly_profit:.2f}")
+    st.write(f"Monthly Profit: ${monthly_profit:.2f}")
+
+    # Line Graph for Profit
+    profit_chart = (
+        alt.Chart(profit_data)
+        .mark_line(point=True, strokeWidth=3, color="green")  # Green line with points
+        .encode(
+            x=alt.X("Period", sort=["Daily", "Weekly", "Monthly"], title="Period"),
+            y=alt.Y("Profit", title="Profit ($)"),
+            tooltip=["Period", "Profit"],
+        )
+        .properties(title="Profit Over Time", width="container", height=400)
+    )
+    st.altair_chart(profit_chart, use_container_width=True)
+
+    # Least and Best Selling Product
+    st.subheader("Product Performance")
+    best_selling = sales_summary.loc[sales_summary["count"].idxmax(), "coffee_type"]
+    least_selling = sales_summary.loc[sales_summary["count"].idxmin(), "coffee_type"]
+    st.write(f"Best Selling Product: {best_selling}")
+    st.write(f"Least Selling Product: {least_selling}")
+
+    # Improved Bar Chart for Product Performance
+    performance_chart = (
+        alt.Chart(sales_summary)
+        .mark_bar(color="blue")  # Blue for a different aesthetic
+        .encode(
+            x=alt.X("coffee_type", sort="-y", title="Coffee Type"),
+            y=alt.Y("count", title="Sales Count"),
+        )
+        .properties(title="Product Performance", width="container", height=400)
+    )
+    st.altair_chart(performance_chart, use_container_width=True)
 
     # Display loyalty points summary
     st.subheader("Loyalty Points Summary")
